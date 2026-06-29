@@ -8,27 +8,29 @@ App::App(IFeedManager& feedManager, MotionDetector* motionDetector, ImageTracker
 App::~App()
 {
 	isRunning = false;
-	if (motionThread.joinable()) motionThread.join();
-	if (trackerThread.joinable()) trackerThread.join();
+	if (motionDetectThread.joinable()) motionDetectThread.join();
+	if (imageTrackThread.joinable()) imageTrackThread.join();
 	cv::destroyAllWindows();
 }
 
+//Method that runs on a dedicated background thread (motionDetectThread) to process motion detection frames
 void App::MotionWorkerLoop()
 {
 	while (isRunning)
 	{
 		cv::Mat localFrame;
 		{
-			std::lock_guard<std::mutex> lock(motionMutex);
-			if (!latestMotionFrame.empty())
+			std::lock_guard<std::mutex> lock(motionDetectMutex);
+			if (!motionDetectFrame.empty())
 			{
-				localFrame = latestMotionFrame;
-				latestMotionFrame.release();
+				localFrame = motionDetectFrame;
+				motionDetectFrame.release();
 			}
 		}
 
 		if (isRunning && !localFrame.empty() && motionDetector != nullptr)
 		{
+			//Detects if there is motion in the current frame and updates the motion state accordingly
 			motionDetector->ProcessFrame(localFrame);
 		}
 		else
@@ -38,22 +40,24 @@ void App::MotionWorkerLoop()
 	}
 }
 
+//Method that runs on a dedicated background thread (imageTrackThread) to process image tracking frames
 void App::TrackerWorkerLoop()
 {
 	while (isRunning)
 	{
 		cv::Mat localFrame;
 		{
-			std::lock_guard<std::mutex> lock(trackerMutex);
-			if (!latestTrackerFrame.empty())
+			std::lock_guard<std::mutex> lock(imageTrackMutex);
+			if (!imageTrackFrame.empty())
 			{
-				localFrame = latestTrackerFrame;
-				latestTrackerFrame.release();
+				localFrame = imageTrackFrame;
+				imageTrackFrame.release();
 			}
 		}
 
 		if (isRunning && !localFrame.empty() && imageTracker != nullptr)
 		{
+			//Tries to match the reference image with the current frame and updates the tracking state accordingly
 			imageTracker->DetectAndMatch(localFrame);
 		}
 		else
@@ -65,7 +69,6 @@ void App::TrackerWorkerLoop()
 
 void App::Force60FPS(const std::chrono::steady_clock::time_point& frameStart)
 {
-	// 1. Calculate and update rolling FPS display variable once per second
 	frameCount++;
 	auto currentTime = std::chrono::steady_clock::now();
 	std::chrono::duration<double> elapsed = currentTime - lastTime;
@@ -76,10 +79,8 @@ void App::Force60FPS(const std::chrono::steady_clock::time_point& frameStart)
 		lastTime = currentTime;
 	}
 
-	// 2. Define the exact duration 1 full frame should take at 60 FPS (~16.666 ms)
 	const std::chrono::duration<double> frameDuration(1.0 / 60.0);
 
-	// 3. Spin lock until the total duration since frameStart matches our frame time target
 	while (std::chrono::steady_clock::now() - frameStart < frameDuration)
 	{
 		// Relinquish remaining slice of CPU scheduling quantum to prevent 100% core usage spikes
@@ -90,45 +91,52 @@ void App::Force60FPS(const std::chrono::steady_clock::time_point& frameStart)
 void App::Run()
 {
 	cv::Mat frame;
-	const std::string mainWindowName = "Split Flap Monitor System";
-	const std::string debugWindowName = "MOG2 Foreground Mask (Debug)";
+	const std::string mainWindowName = "Main Window";
+	const std::string debugWindowName = "Debug Window";
 
 	isRunning = true;
 
-	if (motionDetector != nullptr) {
-		motionThread = std::thread(&App::MotionWorkerLoop, this);
+	//Spawns the motion detection thread
+	if (motionDetector != nullptr) 
+	{
+		motionDetectThread = std::thread(&App::MotionWorkerLoop, this);
 	}
-	if (imageTracker != nullptr) {
-		trackerThread = std::thread(&App::TrackerWorkerLoop, this);
+	
+	//Spawns the image tracking thread
+	if (imageTracker != nullptr) 
+	{
+		imageTrackThread = std::thread(&App::TrackerWorkerLoop, this);
 	}
 
 	while (isRunning)
 	{
 		auto frameStart = std::chrono::steady_clock::now();
 
+		//Get next frame from the active feed manager
 		if (!feedManager.ReadNextFrame(frame))
 		{
 			std::cerr << "Error: Could not read frame from active feed manager." << std::endl;
 			break;
 		}
 
-		if (frame.empty()) continue;
+		if (frame.empty()) 
+			continue;
 
-		// FIX: Send full resolution deep copies to the thread loops.
-		// This keeps the original frame bounds intact so the hardcoded ROI doesn't break.
+		//Deep-clone the frame to be used by the motion detection thread
 		if (motionDetector != nullptr)
 		{
-			std::lock_guard<std::mutex> lock(motionMutex);
-			latestMotionFrame = frame.clone();
+			std::lock_guard<std::mutex> lock(motionDetectMutex);
+			motionDetectFrame = frame.clone();
 		}
 
+		//Deep-clone the frame to be used by the image tracking thread
 		if (imageTracker != nullptr)
 		{
-			std::lock_guard<std::mutex> lock(trackerMutex);
-			latestTrackerFrame = frame.clone();
+			std::lock_guard<std::mutex> lock(imageTrackMutex);
+			imageTrackFrame = frame.clone();
 		}
 
-		// Draw text notifications on the local main-thread frame
+		//Draw UI text for motion detection
 		if (motionDetector != nullptr)
 		{
 			cv::putText(frame, "Status: " + MotionStateToStr(motionDetector->GetCurrentState()), cv::Point(25, 40),
@@ -138,20 +146,24 @@ void App::Run()
 				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
 		}
 
+		//Draw UI text for image tracking
 		if (imageTracker != nullptr && imageTracker->IsTracking())
 		{
-			cv::putText(frame, "OBJECT TRACKED!", cv::Point(30, 130),
+			cv::putText(frame, "Reference image found!", cv::Point(30, 130),
 				cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 		}
 
-		// Isolate matrix ownership explicitly before rendering
+		
 		cv::Mat displayFrame = frame.clone();
 
-		cv::putText(displayFrame, "FPS: " + std::to_string(static_cast<int>(fps)), cv::Point(20, 110),
+		//Draw the FPS counter on the display frame
+		cv::putText(displayFrame, "FPS: " + std::to_string(static_cast<int>(fps)), cv::Point(20, 310),
 			cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 0), 1);
 		
+		//Draw the video feed into the main window
 		cv::imshow(mainWindowName, displayFrame);
 
+		//Draw the motion detection debug mask into the debug window if enabled
 		if (motionDetector != nullptr && motionDetector->ShouldShowDebugMask())
 		{
 			cv::Mat debugMask;
@@ -170,18 +182,23 @@ void App::Run()
 			}
 		}
 
-		char key = (char)cv::waitKey(1);
-		if (key == 27)
-		{
-			isRunning = false;
-		}
-		else if ((key == 'd' || key == 'D') && motionDetector != nullptr)
-		{
-			motionDetector->ToggleDebugMask();
-		}
+		HandleKeyboardInput();	
 		
 		Force60FPS(frameStart);
 	}
 
 	isRunning = false;
+}
+
+void App::HandleKeyboardInput()
+{
+	char key = (char)cv::waitKey(1);
+	if (key == 27)
+	{
+		isRunning = false;
+	}
+	else if ((key == 'd' || key == 'D') && motionDetector != nullptr)
+	{
+		motionDetector->ToggleDebugMask();
+	}
 }

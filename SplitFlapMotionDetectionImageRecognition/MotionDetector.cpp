@@ -62,7 +62,7 @@ void MotionDetector::ProcessFrame(cv::Mat& frame)
 		if (motionFrameCount >= debounceMotionThreshold)
 		{
 			currentState = MotionState::Rotating;
-			textColor = cv::Scalar(0, 0, 255);
+			textColor = cv::Scalar(0, 255, 0);
 		}
 	}
 	//NO MOTION DETECTED
@@ -78,7 +78,7 @@ void MotionDetector::ProcessFrame(cv::Mat& frame)
 		if (stillFramesCount >= debounceStillThreshold)
 		{
 			currentState = MotionState::NotRotating;
-			textColor = cv::Scalar(0, 255, 0);
+			textColor = cv::Scalar(0, 0, 255);
 		}
 	}
 

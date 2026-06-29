@@ -15,13 +15,15 @@ private:
 	ImageTracker* imageTracker;
 
 	std::atomic<bool> isRunning;
-	std::thread motionThread;
-	std::thread trackerThread;
+	//Thread that runs motion detection in the background
+	std::thread motionDetectThread;
+	//Thread that runs image tracking in the background
+	std::thread imageTrackThread;
 
-	cv::Mat latestMotionFrame;
-	cv::Mat latestTrackerFrame;
-	std::mutex motionMutex;
-	std::mutex trackerMutex;
+	cv::Mat motionDetectFrame;
+	cv::Mat imageTrackFrame;
+	std::mutex motionDetectMutex;
+	std::mutex imageTrackMutex;
 
 	std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
 	int frameCount = 0;
@@ -37,4 +39,5 @@ private:
 	void MotionWorkerLoop();
 	void TrackerWorkerLoop();
 	void Force60FPS(const std::chrono::steady_clock::time_point& frameStart);
+	void HandleKeyboardInput();
 };
