@@ -23,6 +23,10 @@ private:
 	std::mutex motionMutex;
 	std::mutex trackerMutex;
 
+	std::chrono::steady_clock::time_point lastTime = std::chrono::steady_clock::now();
+	int frameCount = 0;
+	double fps = 0.0;
+
 public:
 	App(IFeedManager& feedManager, MotionDetector* motionDetector = nullptr, ImageTracker* imageTracker = nullptr);
 	~App();
@@ -32,4 +36,5 @@ public:
 private:
 	void MotionWorkerLoop();
 	void TrackerWorkerLoop();
+	void Force60FPS(const std::chrono::steady_clock::time_point& frameStart);
 };

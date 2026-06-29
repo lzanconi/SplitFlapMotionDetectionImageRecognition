@@ -7,19 +7,19 @@
 
 int main()
 {
-	LiveFeedManager feedManager(1280, 720);
+	/*LiveFeedManager feedManager(1280, 720);
 	if (!feedManager.Initialize())
 	{
 		std::cerr << "Failed to initialize live feed manager." << std::endl;
 		return -1;
-	}
+	}*/
 
-	/*VideoFeedManager feedManager("split_flap2.mp4");
+	VideoFeedManager feedManager("split_flap2.mp4");
 	if (!feedManager.Initialize())
 	{
 		std::cerr << "Failed to initialize video feed manager." << std::endl;
 		return -1;
-	}*/
+	}
 
 	// 1. Initialize MotionDetector completely
 	MotionDetector motionDetector(feedManager);
@@ -27,7 +27,7 @@ int main()
 
 	// 2. Initialize ImageTracker completely
 	ImageTracker imageTracker(feedManager);
-	if (!imageTracker.Initialize("Whale.jpg"))
+	if (!imageTracker.Initialize("SplitFlap.jpg"))
 	{
 		std::cerr << "Warning: Tracker module could not target image source path." << std::endl;
 	}

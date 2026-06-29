@@ -3,10 +3,7 @@
 
 App::App(IFeedManager& feedManager, MotionDetector* motionDetector, ImageTracker* imageTracker)
 	: feedManager(feedManager), motionDetector(motionDetector), imageTracker(imageTracker), isRunning(false)
-{
-	// FIX: Do not spawn threads here anymore! 
-	// Spawning them here causes a race condition if modules are not initialized yet.
-}
+{ }
 
 App::~App()
 {
@@ -66,6 +63,30 @@ void App::TrackerWorkerLoop()
 	}
 }
 
+void App::Force60FPS(const std::chrono::steady_clock::time_point& frameStart)
+{
+	// 1. Calculate and update rolling FPS display variable once per second
+	frameCount++;
+	auto currentTime = std::chrono::steady_clock::now();
+	std::chrono::duration<double> elapsed = currentTime - lastTime;
+	if (elapsed.count() >= 1.0)
+	{
+		fps = frameCount / elapsed.count();
+		frameCount = 0;
+		lastTime = currentTime;
+	}
+
+	// 2. Define the exact duration 1 full frame should take at 60 FPS (~16.666 ms)
+	const std::chrono::duration<double> frameDuration(1.0 / 60.0);
+
+	// 3. Spin lock until the total duration since frameStart matches our frame time target
+	while (std::chrono::steady_clock::now() - frameStart < frameDuration)
+	{
+		// Relinquish remaining slice of CPU scheduling quantum to prevent 100% core usage spikes
+		std::this_thread::yield();
+	}
+}
+
 void App::Run()
 {
 	cv::Mat frame;
@@ -83,6 +104,8 @@ void App::Run()
 
 	while (isRunning)
 	{
+		auto frameStart = std::chrono::steady_clock::now();
+
 		if (!feedManager.ReadNextFrame(frame))
 		{
 			std::cerr << "Error: Could not read frame from active feed manager." << std::endl;
@@ -111,7 +134,7 @@ void App::Run()
 			cv::putText(frame, "Status: " + MotionStateToStr(motionDetector->GetCurrentState()), cv::Point(25, 40),
 				cv::FONT_HERSHEY_SIMPLEX, 1.0, motionDetector->GetTextColor(), 2);
 
-			cv::putText(frame, "Motion Pixels: " + std::to_string(motionDetector->GetLatestMotionPixels()), cv::Point(25, 80),
+			cv::putText(frame, "Motion Pixels: " + std::to_string(motionDetector->GetMotionPixels()), cv::Point(25, 80),
 				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
 		}
 
@@ -123,12 +146,16 @@ void App::Run()
 
 		// Isolate matrix ownership explicitly before rendering
 		cv::Mat displayFrame = frame.clone();
+
+		cv::putText(displayFrame, "FPS: " + std::to_string(static_cast<int>(fps)), cv::Point(20, 110),
+			cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 0), 1);
+		
 		cv::imshow(mainWindowName, displayFrame);
 
 		if (motionDetector != nullptr && motionDetector->ShouldShowDebugMask())
 		{
 			cv::Mat debugMask;
-			motionDetector->GetLatestThresholdMask(debugMask);
+			motionDetector->CopyThresholdMaskTo(debugMask);
 			if (!debugMask.empty())
 			{
 				cv::imshow(debugWindowName, debugMask);
@@ -152,6 +179,8 @@ void App::Run()
 		{
 			motionDetector->ToggleDebugMask();
 		}
+		
+		Force60FPS(frameStart);
 	}
 
 	isRunning = false;
