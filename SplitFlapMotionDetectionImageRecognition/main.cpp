@@ -1,39 +1,40 @@
-#include <opencv2/opencv.hpp>
 #include <iostream>
-#include "LiveFeedManager.h"
+#include "LiveFeedManager.h"	
 #include "VideoFeedManager.h"
 #include "MotionDetector.h"
+#include "ImageTracker.h"
 #include "App.h"
 
-int main() 
+int main()
 {
-	VideoFeedManager videoFeedManager("split_flap2.mp4");
-	if (!videoFeedManager.Initialize())
+	LiveFeedManager feedManager(1280, 720);
+	if (!feedManager.Initialize())
 	{
-		std::cerr << "Failed to initialize the video feed manager." << std::endl;
+		std::cerr << "Failed to initialize live feed manager." << std::endl;
 		return -1;
 	}
 
-	/*LiveFeedManager liveFeedManager(1280, 720);
-	if (!liveFeedManager.Initialize())
+	/*VideoFeedManager feedManager("split_flap2.mp4");
+	if (!feedManager.Initialize())
 	{
-		std::cerr << "Failed to initialize the live feed manager." << std::endl;
+		std::cerr << "Failed to initialize video feed manager." << std::endl;
 		return -1;
 	}*/
 
-	MotionDetector motionDetector(videoFeedManager);
+	// 1. Initialize MotionDetector completely
+	MotionDetector motionDetector(feedManager);
 	motionDetector.Initialize();
 
-	ImageTracker imageTracker(videoFeedManager);
-	if (!imageTracker.Initialize("SplitFlap.jpg"))
+	// 2. Initialize ImageTracker completely
+	ImageTracker imageTracker(feedManager);
+	if (!imageTracker.Initialize("Whale.jpg"))
 	{
-		std::cerr << "Failed to initialize the image tracker." << std::endl;
-		return -1;
-	}	
+		std::cerr << "Warning: Tracker module could not target image source path." << std::endl;
+	}
 
-	//App app(videoFeedManager, &motionDetector, &imageTracker);
-	App app(videoFeedManager, &motionDetector, &imageTracker);
+	// 3. Now it is completely safe to pass them to App
+	App app(feedManager, &motionDetector, &imageTracker);
 	app.Run();
 
-    return 0;
+	return 0;
 }
