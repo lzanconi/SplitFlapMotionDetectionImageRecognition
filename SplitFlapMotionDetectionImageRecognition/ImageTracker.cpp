@@ -13,21 +13,44 @@ ImageTracker::~ImageTracker()
 	orbDetector.release();
 }
 
-bool ImageTracker::Initialize(const std::string& referenceImagePath)
+bool ImageTracker::Initialize(const std::vector<std::string>& imagePaths)
 {
-	//Loads the reference image in grayscale
-	if (!LoadReferenceImage(referenceImagePath, referenceImage)) 
-		return false;
-
 	//Setup an instance of the ORB detector
 	orbDetector = cv::ORB::create(); 
 	//Setup an instance of the Brute Force Matcher with Hamming distance
 	bruteForceMatcher = cv::BFMatcher::create(cv::NORM_HAMMING);
 
-	//Detects keypoints and computes descriptors for the reference image
-	orbDetector->detectAndCompute(referenceImage, cv::noArray(), referenceKeypoints, referenceDescriptors);
+	int loadedSuccessfully = 0;
 
-	return !referenceKeypoints.empty() && !referenceDescriptors.empty();
+	for (const std::string& path : imagePaths)
+	{
+		ImageTarget target;
+		target.imagePath = path;
+
+		// Load the reference image in grayscale
+		if (!LoadReferenceImage(path, target.image))
+		{
+			std::cerr << "Error: Could not load reference image: " << path << std::endl;
+			continue;
+		}
+
+		// Detect keypoints and compute descriptors for this specific target
+		orbDetector->detectAndCompute(target.image, cv::noArray(), target.keypoints, target.descriptors);
+
+		if (!target.keypoints.empty() && !target.descriptors.empty())
+		{
+			referenceTargets.push_back(target);
+			loadedSuccessfully++;
+			std::cout << "Successfully initialized reference image: " << path << " (" << target.keypoints.size() << " keypoints found)" << std::endl;
+		}
+		else
+		{
+			std::cerr << "Warning: No feature points extracted from " << path << std::endl;
+		}
+	}
+
+	// Return true if at least one target image was loaded correctly
+	return loadedSuccessfully > 0;
 }
 
 /*
@@ -35,65 +58,69 @@ bool ImageTracker::Initialize(const std::string& referenceImagePath)
 */
 void ImageTracker::DetectAndMatch(cv::Mat& frame)
 {
-	//Converts the the incoming color frame from the feed to a grasycale frame
+	// Converts the incoming color frame from the feed to a grayscale frame
 	cv::Mat grayFrame;
 	cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
 
-	//Current frame keypoints
+	// Extract features from the current frame once
 	std::vector<cv::KeyPoint> frameKeypoints;
-	//Current frame keyponts descriptors
 	cv::Mat frameDescriptors;
-	//Detects keypoints and computes descriptors for the current grayscale frame
 	orbDetector->detectAndCompute(grayFrame, cv::noArray(), frameKeypoints, frameDescriptors);
 
 	bool currentDetection = false;
 
-	if (referenceDescriptors.empty() || frameDescriptors.empty()) 
+	if (frameDescriptors.empty() || referenceTargets.empty())
 		return;
 
-	std::vector<std::vector<cv::DMatch>> knnMatches;
-	//Compares every single feature descriptor from your reference image against the features found in the new frame.
-	bruteForceMatcher->knnMatch(referenceDescriptors, frameDescriptors, knnMatches, 2);
-
-	//1.K-Nearest Neighbors (KNN) Feature Matching
-	
-	//Iterates through all match pairs to weed out poor or ambiguous data
-	std::vector<cv::DMatch> goodMatches;
-	for (size_t i = 0; i < knnMatches.size(); i++)
+	// Loop through each loaded reference image target to check for matches
+	for (const auto& target : referenceTargets)
 	{
-		if (knnMatches[i].size() >= 2 && knnMatches[i][0].distance < 0.75 * knnMatches[i][1].distance)
+		if (target.descriptors.empty()) continue;
+
+		std::vector<std::vector<cv::DMatch>> knnMatches;
+		// Compares features from the current target against the frame features
+		bruteForceMatcher->knnMatch(target.descriptors, frameDescriptors, knnMatches, 2);
+
+		// 1. K-Nearest Neighbors (KNN) Feature Matching
+		std::vector<cv::DMatch> goodMatches;
+		for (size_t i = 0; i < knnMatches.size(); i++)
 		{
-			goodMatches.push_back(knnMatches[i][0]);
+			if (knnMatches[i].size() >= 2 && knnMatches[i][0].distance < 0.75 * knnMatches[i][1].distance)
+			{
+				goodMatches.push_back(knnMatches[i][0]);
+			}
+		}
+
+		// 2. Homography and RANSAC Outlier Removal
+		if (goodMatches.size() >= 4)
+		{
+			std::vector<cv::Point2f> srcPoints, dstPoints;
+			for (size_t i = 0; i < goodMatches.size(); i++)
+			{
+				srcPoints.push_back(target.keypoints[goodMatches[i].queryIdx].pt);
+				dstPoints.push_back(frameKeypoints[goodMatches[i].trainIdx].pt);
+			}
+
+			std::vector<uchar> inliersMask;
+			cv::Mat H = cv::findHomography(srcPoints, dstPoints, cv::RANSAC, 5.0, inliersMask);
+
+			// 3. Object Detection Verification
+			int inliersCount = 0;
+			for (size_t i = 0; i < inliersMask.size(); i++)
+			{
+				if (inliersMask[i]) inliersCount++;
+			}
+
+			// If the current target matches adequately, flag detection and stop looking at remaining targets
+			if (inliersCount > 12 && !H.empty())
+			{
+				currentDetection = true;
+				break;
+			}
 		}
 	}
 
-	//2.Homography and RANSAC Outlier Removal 
-	//You need a mathematical minimum of 4 points to map a 2D perspective transformation plane between two spaces
-	if (goodMatches.size() >= 4)
-	{
-		std::vector<cv::Point2f> srcPoints, dstPoints;
-		for (size_t i = 0; i < goodMatches.size(); i++)
-		{
-			srcPoints.push_back(referenceKeypoints[goodMatches[i].queryIdx].pt);
-			dstPoints.push_back(frameKeypoints[goodMatches[i].trainIdx].pt);
-		}
-
-		std::vector<uchar> inliersMask;
-		cv::Mat H = cv::findHomography(srcPoints, dstPoints, cv::RANSAC, 5.0, inliersMask);
-
-
-		//3.Object Detection Verification & State Management
-		int inliersCount = 0;
-		for (size_t i = 0; i < inliersMask.size(); i++)
-		{
-			if (inliersMask[i]) inliersCount++;
-		}
-
-		if (inliersCount > 12 && !H.empty()) 
-			currentDetection = true;
-	}
-
-	//Trigger state change just once when the image is detected or lost
+	// Trigger state change globally when any tracked image is detected or lost
 	if (currentDetection && !isTracking.load())
 	{
 		std::cout << "[STATE] Image detected!" << std::endl;
