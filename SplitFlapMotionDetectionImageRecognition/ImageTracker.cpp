@@ -123,12 +123,12 @@ void ImageTracker::DetectAndMatch(cv::Mat& frame)
 	// Trigger state change globally when any tracked image is detected or lost
 	if (currentDetection && !isTracking.load())
 	{
-		std::cout << "[STATE] Image detected!" << std::endl;
+		std::cout << "[ImageTracker] Image detected!" << std::endl;
 		isTracking.store(true);
 	}
 	else if (!currentDetection && isTracking.load())
 	{
-		std::cout << "[STATE] Tracking lost!" << std::endl;
+		std::cout << "[ImageTracker] Image lost!" << std::endl;
 		isTracking.store(false);
 	}
 }
