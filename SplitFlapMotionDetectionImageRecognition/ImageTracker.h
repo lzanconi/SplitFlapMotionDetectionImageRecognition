@@ -16,6 +16,10 @@ private:
 	std::atomic<bool> isTracking;
 
 	std::vector<ImageTarget> referenceTargets;
+	//Path of the current image target being tracked. 
+	//More secure than ImageTarget because ImageTarget contains cv::Math which is not thread safe to copy between threads
+	std::string currentTargetPath;
+	mutable std::mutex trackerMutex;
 
 public:
 	ImageTracker(IFeedManager& feedManager);
@@ -25,6 +29,7 @@ public:
 	void DetectAndMatch(cv::Mat& frame);
 
 	bool IsTracking() const { return isTracking.load(); }
+	std::string GetCurrentTargetPath();
 
 private:
 	bool LoadReferenceImage(const std::string& imagePath, cv::Mat& image);

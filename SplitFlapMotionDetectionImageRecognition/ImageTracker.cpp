@@ -68,6 +68,7 @@ void ImageTracker::DetectAndMatch(cv::Mat& frame)
 	orbDetector->detectAndCompute(grayFrame, cv::noArray(), frameKeypoints, frameDescriptors);
 
 	bool currentDetection = false;
+	std::string matchedPath = "";
 
 	if (frameDescriptors.empty() || referenceTargets.empty())
 		return;
@@ -115,22 +116,34 @@ void ImageTracker::DetectAndMatch(cv::Mat& frame)
 			if (inliersCount > 12 && !H.empty())
 			{
 				currentDetection = true;
+				matchedPath = target.imagePath;
 				break;
 			}
 		}
 	}
 
+	{
+		std::lock_guard<std::mutex> lock(trackerMutex);
+		currentTargetPath = matchedPath;
+	}
+
 	// Trigger state change globally when any tracked image is detected or lost
 	if (currentDetection && !isTracking.load())
 	{
-		std::cout << "[ImageTracker] Image detected!" << std::endl;
+		std::cout << "[ImageTracker] Image detected: " << currentTargetPath << std::endl;
 		isTracking.store(true);
 	}
 	else if (!currentDetection && isTracking.load())
 	{
-		std::cout << "[ImageTracker] Image lost!" << std::endl;
+		std::cout << "[ImageTracker] Image lost" << std::endl;
 		isTracking.store(false);
 	}
+}
+
+std::string ImageTracker::GetCurrentTargetPath()
+{
+	std::lock_guard<std::mutex> lock(trackerMutex);
+	return currentTargetPath;
 }
 
 bool ImageTracker::LoadReferenceImage(const std::string& imagePath, cv::Mat& image)

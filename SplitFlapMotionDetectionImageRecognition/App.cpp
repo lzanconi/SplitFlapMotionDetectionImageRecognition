@@ -203,7 +203,8 @@ void App::Run()
 		//Draw UI text for image tracking
 		if (imageTracker != nullptr && imageTracker->IsTracking())
 		{
-			cv::putText(frame, "Reference image found!", cv::Point(30, 130),
+			std::string msg = "Reference image found: " + imageTracker->GetCurrentTargetPath();
+			cv::putText(frame, msg, cv::Point(30, 130),
 				cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 		}
 
