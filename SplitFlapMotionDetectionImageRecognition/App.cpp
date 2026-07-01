@@ -1,5 +1,6 @@
 #include "App.h"
 #include <iostream>
+#include "Logger.h"
 
 App::App()
 	: feedManager(nullptr), isRunning(false)
@@ -24,7 +25,7 @@ bool App::InitLiveFeed(int width, int height, const std::vector<std::string>& im
 	liveFeedManager = new LiveFeedManager(width, height);
 	if (!liveFeedManager->Initialize())
 	{
-		std::cerr << "Error: Could not initialize live feed manager." << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "App", "InitLiveFeed", "Error could not initialize live feed manager");
 		return false;
 	}
 
@@ -36,10 +37,11 @@ bool App::InitLiveFeed(int width, int height, const std::vector<std::string>& im
 	imageTracker = new ImageTracker(*feedManager);
 	if (!imagePaths.empty() && !imageTracker->Initialize(imagePaths))
 	{
-		std::cerr << "Error: Could not initialize image tracker with provided image targets." << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "App", "InitLiveFeed", "Could not initialize image tracker with provided image targets");
 		return false;
 	}
 
+	Logger::LogApp(MessageType::INFO, "App", "InitLiveFeed", "Successfully started in Live Feed Mode");
 	return true;
 }
 
@@ -48,7 +50,7 @@ bool App::InitVideoFeed(const std::string& videoFilePath, const std::vector<std:
 	videoFeedManager = new VideoFeedManager(videoFilePath);
 	if (!videoFeedManager->Initialize())
 	{
-		std::cerr << "Error: Could not initialize video feed manager." << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "App", "InitVideoFeed", "Error could not initialize video feed manager");
 		return false;
 	}
 
@@ -60,10 +62,11 @@ bool App::InitVideoFeed(const std::string& videoFilePath, const std::vector<std:
 	imageTracker = new ImageTracker(*feedManager);
 	if (!imagePaths.empty() && !imageTracker->Initialize(imagePaths))
 	{
-		std::cerr << "Error: Could not initialize image tracker with provided image targets." << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "App", "InitVideoFeed", "Could not initialize image tracker with provided image targets");
 		return false;
 	}
 
+	Logger::LogApp(MessageType::INFO, "App", "InitVideoFeed", "Successfully started in Video Feed Mode");
 	return true;
 }
 
@@ -169,7 +172,7 @@ void App::Run()
 		//Get next frame from the active feed manager
 		if (!feedManager->ReadNextFrame(frame))
 		{
-			std::cerr << "Error: Could not read frame from active feed manager." << std::endl;
+			Logger::LogApp(MessageType::ERRORS, "App", "Run", "Could not read frame from active feed manager");
 			break;
 		}
 
@@ -270,7 +273,7 @@ void App::CheckMotionAndTrackingState()
 		{
 			if (imageTracker->IsTracking())
 			{
-				imageTrackingMsg = "[Image Tracking] Reference image detected: " + imageTracker->GetCurrentTargetPath();
+				imageTrackingMsg = "[Image Tracking] Reference image detected: " + imageTracker->GetCurrentTargetPath() + "\n";
 			}
 
 			lastTrackingState = imageTracker->IsTracking();
@@ -303,11 +306,12 @@ void App::CheckMotionAndTrackingState()
 				//if the image tracking message is empty, it means it couldn't recognise the image
 				else if (imageTracker != nullptr && imageTracker->HasLastMatchFailed())
 				{
-					monitoringMsg += "[Image Tracking] Image not recognised";
+					monitoringMsg += "[Image Tracking] Image not recognised\n";
 				}
 			}
 
-			std::cout << monitoringMsg;
+			//std::cout << monitoringMsg;
+			Logger::LogMonitoring(monitoringMsg);
 			lastMotionState = motionDetector->GetCurrentState();
 		}
 	}

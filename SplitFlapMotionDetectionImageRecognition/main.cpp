@@ -4,11 +4,14 @@
 #include "MotionDetector.h"
 #include "ImageTracker.h"
 #include "App.h"
+#include "Logger.h"
+#include <opencv2/core/utils/logger.hpp>
 
 int main()
 {
-	
+	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 	App app;
+	Logger::Clear();
 
 	std::vector<std::string> referenceImages = 
 	{
@@ -19,7 +22,6 @@ int main()
 	//INIT VIDEO FEED
 	if (!app.InitVideoFeed("split_flap2.mp4", referenceImages))
 	{
-		std::cerr << "Error: Could not initialize video feed." << std::endl;
 		return -1;
 	}
 

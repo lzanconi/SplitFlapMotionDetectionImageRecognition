@@ -1,6 +1,7 @@
 #include "ImageTracker.h"
 #include <opencv2/features2d.hpp>
 #include <opencv2/calib3d.hpp>
+#include "Logger.h"
 
 ImageTracker::ImageTracker(IFeedManager& feedManager)
 	: feedManager(feedManager), isTracking(false)
@@ -30,7 +31,7 @@ bool ImageTracker::Initialize(const std::vector<std::string>& imagePaths)
 		// Load the reference image in grayscale
 		if (!LoadReferenceImage(path, target.image))
 		{
-			std::cerr << "Error: Could not load reference image: " << path << std::endl;
+			Logger::LogApp(MessageType::ERRORS, "ImageTracker", "Initialize", "Could not load reference image: " + path);
 			continue;
 		}
 
@@ -41,11 +42,12 @@ bool ImageTracker::Initialize(const std::vector<std::string>& imagePaths)
 		{
 			referenceTargets.push_back(target);
 			loadedSuccessfully++;
-			std::cout << "Successfully initialized reference image: " << path << " (" << target.keypoints.size() << " keypoints found)" << std::endl;
+			Logger::LogApp(MessageType::INFO, "ImageTracker", "Initialize", "Successfully initialized reference image: " + path + " (" + std::to_string(target.keypoints.size()) + " keypoints found)");
 		}
 		else
 		{
 			std::cerr << "Warning: No feature points extracted from " << path << std::endl;
+			Logger::LogApp(MessageType::INFO, "ImageTracker", "Initialize", "Warning: No feature points extracted from " + path);
 		}
 	}
 

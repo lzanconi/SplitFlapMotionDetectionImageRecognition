@@ -1,4 +1,5 @@
 #include "LiveFeedManager.h"
+#include "Logger.h"
 
 LiveFeedManager::LiveFeedManager(int width, int height)
 	: cameraWidth(width), cameraHeight(height)
@@ -14,7 +15,7 @@ bool LiveFeedManager::Initialize()
 {
 	if (!ScanAndSelectCamera())
 	{
-		std::cerr << "Error: No camera selected or available!" << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "LiveFeedManager", "Initialize", "No camera selected or available!");
 		return false;
 	}
 
@@ -30,9 +31,11 @@ bool LiveFeedManager::ReadNextFrame(cv::Mat& frame)
 bool LiveFeedManager::ScanAndSelectCamera()
 {
 	std::vector<int> availableCameras;
-	std::cout << "========================================" << std::endl;
-	std::cout << " SCANNING FOR AVAILABLE VIDEO DEVICES... " << std::endl;
-	std::cout << "========================================" << std::endl;
+	std::string msg = "========================================\n";
+	msg += " SCANNING FOR AVAILABLE VIDEO DEVICES... \n";
+	msg += "========================================\n";
+
+	Logger::LogApp(MessageType::INFO, "LiveFeedManager", "ScanAndSelectCamera", msg);
 
 	for (int i = 0; i < 6; i++)
 	{
@@ -40,28 +43,32 @@ bool LiveFeedManager::ScanAndSelectCamera()
 		if (foundCamera.isOpened())
 		{
 			availableCameras.push_back(i);
-			std::cout << "[" << availableCameras.size() - 1 << "] Camera Index " << i << std::endl;
+			msg = "[" + std::to_string(availableCameras.size() - 1) + "] Camera Index " +  std::to_string(i);
+
+			Logger::LogApp(MessageType::INFO, "LiveFeedManager", "ScanAndSelectCamera", msg);
 			foundCamera.release();
 		}
 	}
 
 	if (availableCameras.empty())
 	{
-		std::cerr << "No functional cameras detected." << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "LiveFeedManager", "ScanAndSelectCamera", "No functional cameras detected");
 		return false;
 	}
 
 	int selection = 0;
 	while (true)
 	{
-		std::cout << "\nSelect camera choice (0-" << availableCameras.size() - 1 << "): ";
+		msg = "\nSelect camera choice (0-" + std::to_string(availableCameras.size() - 1) + "): ";
+		Logger::LogApp(MessageType::INFO, "LiveFeedManager", "ScanAndSelectCamera", msg);
 		std::cin >> selection;
 
 		if (std::cin.fail() || selection < 0 || selection >= static_cast<int>(availableCameras.size()))
 		{
 			std::cin.clear();
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			std::cout << "Invalid selection. Please try again." << std::endl;
+			msg = "Invalid selection. Please try again.";
+			Logger::LogApp(MessageType::INFO, "LiveFeedManager", "ScanAndSelectCamera", msg);
 		}
 		else
 		{
@@ -74,7 +81,7 @@ bool LiveFeedManager::ScanAndSelectCamera()
 	videoCapture.open(chosenIndex, cv::CAP_DSHOW);
 	if (!videoCapture.isOpened())
 	{
-		std::cerr << "Error: Could not open selected camera!" << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "LiveFeedManager", "ScanAndSelectCamera", "Could not open selected camera!");
 		return false;
 	}
 

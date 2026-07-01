@@ -1,5 +1,5 @@
 #include "VideoFeedManager.h"
-
+#include "Logger.h"
 
 
 VideoFeedManager::VideoFeedManager(const std::string& filePath)
@@ -17,7 +17,7 @@ bool VideoFeedManager::Initialize()
 	videoCapture.open(videoFilePath);
 	if (!videoCapture.isOpened())
 	{
-		std::cerr << "Error: Could not open video file: " << videoFilePath << std::endl;
+		Logger::LogApp(MessageType::ERRORS, "VideoFeedManager", "Initialize", "Could not open video file: " + videoFilePath);
 		return false;
 	}
 
@@ -53,7 +53,7 @@ bool VideoFeedManager::IsFeedOpen()
 
 void VideoFeedManager::LoopVideo(cv::Mat& frame)
 {
-	std::cout << "Video ended. Rewinding..." << std::endl;
+	Logger::LogApp(MessageType::INFO, "VideoFeedManager", "LoopVideo", "Video Ended. Looping...");
 	videoCapture.set(cv::CAP_PROP_POS_FRAMES, 0);
 	videoCapture >> frame;
 }

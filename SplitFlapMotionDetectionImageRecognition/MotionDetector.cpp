@@ -11,7 +11,6 @@ MotionDetector::~MotionDetector() = default;
 
 void MotionDetector::Initialize(int motionThreshold, int debounceMotionThreshold, int debounceStillThreshold, int mog2History, int mog2Threshold, cv::Rect roi)
 {
-	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 	this->motionThreshold = motionThreshold;
 	this->debounceMotionThreshold = debounceMotionThreshold;
 	this->debounceStillThreshold = debounceStillThreshold;

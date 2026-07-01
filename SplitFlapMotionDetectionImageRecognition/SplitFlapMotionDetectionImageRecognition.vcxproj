@@ -130,6 +130,7 @@
     <ClCompile Include="IFeedManager.cpp" />
     <ClCompile Include="ImageTracker.cpp" />
     <ClCompile Include="LiveFeedManager.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MotionDetector.cpp" />
     <ClCompile Include="VideoFeedManager.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="IFeedManager.h" />
     <ClInclude Include="ImageTracker.h" />
     <ClInclude Include="LiveFeedManager.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="MotionDetector.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="VideoFeedManager.h" />
