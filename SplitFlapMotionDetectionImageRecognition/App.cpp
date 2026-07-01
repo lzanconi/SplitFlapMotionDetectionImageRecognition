@@ -1,10 +1,18 @@
 #include "App.h"
+#include "LiveFeedManager.h"
+#include "VideoFeedManager.h"
+#include "MotionDetector.h"
+#include "ImageTracker.h"
+#include "ConfigManager.h"
 #include <iostream>
 #include "Logger.h"
 
 App::App()
 	: feedManager(nullptr), isRunning(false)
-{ }
+{
+	configMgr = new ConfigManager();
+	configMgr->LoadConfig("conf.json");
+}
 
 App::~App()
 {
@@ -18,11 +26,29 @@ App::~App()
 		delete feedManager;
 		feedManager = nullptr;
 	}
+
+	if (motionDetector != nullptr)
+	{
+		delete motionDetector;
+		motionDetector = nullptr;
+	}
+
+	if (imageTracker != nullptr)
+	{
+		delete imageTracker;
+		imageTracker = nullptr;
+	}
+
+	if (configMgr != nullptr)
+	{
+		delete configMgr;
+		configMgr = nullptr;
+	}
 }
 
-bool App::InitLiveFeed(int width, int height, const std::vector<std::string>& imagePaths)
+bool App::InitLiveFeed(const std::vector<std::string>& imagePaths)
 {
-	liveFeedManager = new LiveFeedManager(width, height);
+	liveFeedManager = new LiveFeedManager(GetConfig().liveFeedWidth, GetConfig().liveFeedHeight);
 	if (!liveFeedManager->Initialize())
 	{
 		Logger::LogApp(MessageType::ERRORS, "App", "InitLiveFeed", "Error could not initialize live feed manager");
@@ -45,9 +71,9 @@ bool App::InitLiveFeed(int width, int height, const std::vector<std::string>& im
 	return true;
 }
 
-bool App::InitVideoFeed(const std::string& videoFilePath, const std::vector<std::string>& imagePaths)
+bool App::InitVideoFeed(const std::vector<std::string>& imagePaths)
 {
-	videoFeedManager = new VideoFeedManager(videoFilePath);
+	videoFeedManager = new VideoFeedManager(GetConfig().videoFeedFile);
 	if (!videoFeedManager->Initialize())
 	{
 		Logger::LogApp(MessageType::ERRORS, "App", "InitVideoFeed", "Error could not initialize video feed manager");
@@ -250,6 +276,8 @@ void App::Run()
 	isRunning = false;
 }
 
+
+
 void App::HandleKeyboardInput()
 {
 	char key = (char)cv::waitKey(1);
@@ -315,4 +343,9 @@ void App::CheckMotionAndTrackingState()
 			lastMotionState = motionDetector->GetCurrentState();
 		}
 	}
+}
+
+Config& App::GetConfig()
+{
+	return configMgr->config;
 }

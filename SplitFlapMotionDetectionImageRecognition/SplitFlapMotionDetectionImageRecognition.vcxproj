@@ -102,7 +102,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\nlohmann;C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,6 +128,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="ConfigManager.cpp" />
+    <ClCompile Include="IApp.cpp" />
     <ClCompile Include="IFeedManager.cpp" />
     <ClCompile Include="ImageTracker.cpp" />
     <ClCompile Include="LiveFeedManager.cpp" />
@@ -137,7 +140,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="customtypes.h" />
+    <ClInclude Include="IApp.h" />
     <ClInclude Include="IFeedManager.h" />
     <ClInclude Include="ImageTracker.h" />
     <ClInclude Include="LiveFeedManager.h" />

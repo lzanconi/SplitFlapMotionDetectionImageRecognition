@@ -41,7 +41,7 @@ private:
 public:
 	MotionDetector(IFeedManager& feedManager);
 	~MotionDetector();
-	void ValidateROI();	
+	void ValidateROI(const cv::Mat& actualFrame);
 
 	void Initialize(int motionThreshold = 6000, int debounceMotionThreshold = 5, int debounceStillThreshold = 15, int mog2History = 120, int mog2Threshold = 32, cv::Rect roi = cv::Rect(473, 112, 507, 443));
 	void ProcessFrame(cv::Mat& frame);

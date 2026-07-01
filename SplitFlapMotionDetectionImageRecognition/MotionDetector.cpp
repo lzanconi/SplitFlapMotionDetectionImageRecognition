@@ -30,12 +30,12 @@ void MotionDetector::Initialize(int motionThreshold, int debounceMotionThreshold
 	// 2.varThreshold -> determines how radically a pixel current color/brightness must depart from its historical average to be considered as motion
 	// 3.detectShadows -> if true, the algorithm will try to detect shadows and mark them as a separate class of motion.
 	backgroundSubtractor = cv::createBackgroundSubtractorMOG2(this->mog2History, this->mog2Threshold, false);
-
-	ValidateROI();
 }
 
 void MotionDetector::ProcessFrame(cv::Mat& frame)
 {
+	ValidateROI(frame);
+
 	//Crop the frame to the region of interest
 	cv::Mat roi_frame = frame(roi);
 	//Black and white binary matrix where white pixels represent areas of motion and black pixels represent areas of no motion 
@@ -98,16 +98,28 @@ void MotionDetector::ProcessFrame(cv::Mat& frame)
 	}
 }
 
-void MotionDetector::ValidateROI()
+void MotionDetector::ValidateROI(const cv::Mat& actualFrame)
 {
 	if (feedManager.IsFeedOpen())
 	{
-		int frameWidth = feedManager.GetFrameWidth();
-		int frameHeight = feedManager.GetFrameHeight();
-		if (roi.x < 0 || roi.width < 0 || (roi.x + roi.width) > frameWidth ||
-			roi.y < 0 || roi.height < 0 || (roi.y + roi.height) > frameHeight)
+		// Use the actual matrix columns and rows, NOT the feedManager variables
+		int frameWidth = actualFrame.cols;
+		int frameHeight = actualFrame.rows;
+
+		// Clamp the starting coordinates so they cannot be negative or out of bounds
+		if (roi.x < 0) roi.x = 0;
+		if (roi.y < 0) roi.y = 0;
+		if (roi.x >= frameWidth) roi.x = 0;
+		if (roi.y >= frameHeight) roi.y = 0;
+
+		// Clamp the width and height so they cannot expand beyond the right/bottom edges
+		if (roi.width <= 0 || (roi.x + roi.width) > frameWidth)
 		{
-			this->roi = cv::Rect(0, 0, frameWidth, frameHeight);
+			roi.width = frameWidth - roi.x;
+		}
+		if (roi.height <= 0 || (roi.y + roi.height) > frameHeight)
+		{
+			roi.height = frameHeight - roi.y;
 		}
 	}
 }

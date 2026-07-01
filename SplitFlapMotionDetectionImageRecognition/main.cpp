@@ -20,15 +20,14 @@ int main()
 	};
 
 	//INIT VIDEO FEED
-	if (!app.InitVideoFeed("split_flap2.mp4", referenceImages))
+	if (!app.InitVideoFeed(referenceImages))
 	{
 		return -1;
 	}
 
 	//INIT LIVE FEED
-	/*if (!app.InitLiveFeed(1280, 720, referenceImages))
+	/*if (!app.InitLiveFeed(referenceImages))
 	{
-		std::cerr << "Error: Could not initialize live feed." << std::endl;
 		return -1;
 	}*/
 

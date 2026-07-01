@@ -1,17 +1,22 @@
 #pragma once
+#include "IApp.h"
 #include "IFeedManager.h"
-#include "MotionDetector.h"
-#include "ImageTracker.h"
-#include "LiveFeedManager.h"
-#include "VideoFeedManager.h"
+
 #include "utils.h"
 #include <thread>
 #include <atomic>
 #include <mutex>
 
-class App
+class LiveFeedManager;
+class VideoFeedManager;
+class MotionDetector;
+class ImageTracker;
+class ConfigManager;
+
+class App : public IApp
 {
 private:
+	ConfigManager* configMgr;
 	LiveFeedManager* liveFeedManager;
 	VideoFeedManager* videoFeedManager;
 	IFeedManager* feedManager;
@@ -42,10 +47,11 @@ public:
 	App();
 	~App();
 
-	bool InitLiveFeed(int width = 1280, int height = 720, const std::vector<std::string>& imagePaths = {});
-	bool InitVideoFeed(const std::string& videoFilePath, const std::vector<std::string>& imagePaths = {});
+	bool InitLiveFeed(const std::vector<std::string>& imagePaths = {});
+	bool InitVideoFeed(const std::vector<std::string>& imagePaths = {});
 
 	void Run();
+	Config& GetConfig() override;
 
 private:
 	void MotionWorkerLoop();

@@ -20,3 +20,10 @@ struct ImageTarget
 	std::vector<cv::KeyPoint> keypoints;
 	cv::Mat descriptors;
 };
+
+struct Config
+{
+	int liveFeedWidth = 1280;
+	int liveFeedHeight = 720;
+	std::string videoFeedFile = "split_flap2.mp4";
+};
