@@ -237,8 +237,6 @@ void App::Run()
 			}
 		}
 
-		CheckMotionAndTrackingStateChanges();
-
 		HandleKeyboardInput();	
 		
 		Force60FPS(frameStart);
@@ -257,72 +255,5 @@ void App::HandleKeyboardInput()
 	else if ((key == 'd' || key == 'D') && motionDetector != nullptr)
 	{
 		motionDetector->ToggleDebugMask();
-	}
-}
-
-void App::CheckMotionAndTrackingStateChanges()
-{
-	// 1. Existing tracking state change tracker
-	if (imageTracker != nullptr)
-	{
-		if (imageTracker->IsTracking() != lastTrackingState)
-		{
-			if (imageTracker->IsTracking())
-			{
-				pendingTrackerMsg = "[Image Tracking] Reference image detected: " + imageTracker->GetCurrentTargetPath();
-				hasPrintedNotRecognised = false; // Reset failure print state when an image is successfully found
-			}
-			else
-			{
-				pendingTrackerMsg = "[Image Tracking] Reference image lost";
-			}
-
-			lastTrackingState = imageTracker->IsTracking();
-		}
-	}
-
-	// 2. Motion state tracking logic
-	if (motionDetector != nullptr)
-	{
-		if (motionDetector->GetCurrentState() != lastMotionState)
-		{
-			if (motionDetector->GetCurrentState() == MotionState::Rotating)
-			{
-				std::cout << "[Motion Detection] Rotation started" << std::endl;
-				hasPrintedNotRecognised = false; // Reset flag when rotation starts again
-			}
-			else
-			{
-				std::cout << "[Motion Detection] Rotation stopped" << std::endl;
-
-				if (!pendingTrackerMsg.empty())
-				{
-					std::cout << pendingTrackerMsg << std::endl;
-					pendingTrackerMsg = "";
-				}
-				// If rotation stopped and no valid image is tracked right now
-				else if (imageTracker != nullptr && imageTracker->HasLastMatchFailed() && !hasPrintedNotRecognised)
-				{
-					std::cout << "Image not recognised" << std::endl;
-					hasPrintedNotRecognised = true;
-				}
-			}
-
-			lastMotionState = motionDetector->GetCurrentState();
-		}
-		// 3. While already stopped, immediately print tracking changes or recognition failures
-		else if (motionDetector->GetCurrentState() == MotionState::NotRotating)
-		{
-			if (!pendingTrackerMsg.empty())
-			{
-				std::cout << pendingTrackerMsg << std::endl;
-				pendingTrackerMsg = "";
-			}
-			else if (imageTracker != nullptr && imageTracker->HasLastMatchFailed() && !hasPrintedNotRecognised && !imageTracker->IsTracking())
-			{
-				std::cout << "Image not recognised" << std::endl;
-				hasPrintedNotRecognised = true;
-			}
-		}
 	}
 }

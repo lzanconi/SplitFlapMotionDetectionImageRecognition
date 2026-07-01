@@ -12,7 +12,7 @@ int main()
 
 	std::vector<std::string> referenceImages = 
 	{
-		//"SplitFlap.jpg",
+		"SplitFlap.jpg",
 		"Whale.jpg"
 	};
 

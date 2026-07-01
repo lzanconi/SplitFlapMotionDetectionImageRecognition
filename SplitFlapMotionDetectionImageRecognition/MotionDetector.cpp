@@ -62,12 +62,10 @@ void MotionDetector::ProcessFrame(cv::Mat& frame)
 		if (motionFrameCount >= debounceMotionThreshold)
 		{
 
-			/*if (currentState.load() != MotionState::Rotating)
+			if (currentState.load() != MotionState::Rotating)
 			{
 				std::cout << "[MotionDetector] Motion detected!" << std::endl;
-			}*/
-
-			//std::cout << "[MotionDetector] Motion detected!" << std::endl;
+			}
 			currentState = MotionState::Rotating;
 			textColor = cv::Scalar(0, 255, 0);
 		}
@@ -84,12 +82,10 @@ void MotionDetector::ProcessFrame(cv::Mat& frame)
 		//If motion has NOT been detected for a number of consecutive frames > debounceStillThreshold, the state is set to "Not Rotating"
 		if (stillFramesCount >= debounceStillThreshold)
 		{
-			/*if (currentState.load() != MotionState::NotRotating)
+			if (currentState.load() != MotionState::NotRotating)
 			{
 				std::cout << "[MotionDetector] Motion stopped!" << std::endl;
-			}*/
-
-			//std::cout << "[MotionDetector] Motion stopped!" << std::endl;
+			}
 			currentState = MotionState::NotRotating;
 			textColor = cv::Scalar(0, 0, 255);
 		}
