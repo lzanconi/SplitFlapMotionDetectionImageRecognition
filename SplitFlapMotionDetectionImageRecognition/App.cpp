@@ -72,14 +72,12 @@ bool App::InitLiveFeed()
 	Config config = GetConfig();
 	std::vector<std::string> imageTargets = config.imageTargets;
 
-	liveFeedManager = new LiveFeedManager(config.liveFeedWidth, config.liveFeedHeight);
-	if (!liveFeedManager->Initialize())
+	feedManager = new LiveFeedManager(config.liveFeedWidth, config.liveFeedHeight);
+	if (!feedManager->Initialize())
 	{
 		Logger::LogApp(MessageType::ERRORS, "App", "InitLiveFeed", "Error could not initialize live feed manager");
 		return false;
 	}
-
-	feedManager = liveFeedManager;
 
 	motionDetector = new MotionDetector(*feedManager);
 	motionDetector->Initialize(config.motionThreshold, config.debounceMotionThreshold, config.debounceStillThreshold, config.mog2History, config.mog2Threshold, cv::Rect(config.roi.x, config.roi.y, config.roi.width, config.roi.height));
@@ -100,14 +98,12 @@ bool App::InitVideoFeed()
 	Config config = GetConfig();
 	std::vector<std::string> imageTargets = config.imageTargets;
 
-	videoFeedManager = new VideoFeedManager(GetConfig().videoFeedFile);
-	if (!videoFeedManager->Initialize())
+	feedManager = new VideoFeedManager(GetConfig().videoFeedFile);
+	if (!feedManager->Initialize())
 	{
 		Logger::LogApp(MessageType::ERRORS, "App", "InitVideoFeed", "Error could not initialize video feed manager");
 		return false;
 	}
-
-	feedManager = videoFeedManager;
 
 	motionDetector = new MotionDetector(*feedManager);	
 	motionDetector->Initialize();

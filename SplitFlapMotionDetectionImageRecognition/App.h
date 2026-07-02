@@ -1,14 +1,12 @@
 #pragma once
 #include "IApp.h"
-#include "IFeedManager.h"
 
 #include "utils.h"
 #include <thread>
 #include <atomic>
 #include <mutex>
 
-class LiveFeedManager;
-class VideoFeedManager;
+class IFeedManager;
 class MotionDetector;
 class ImageTracker;
 class ConfigManager;
@@ -17,8 +15,6 @@ class App : public IApp
 {
 private:
 	ConfigManager* configMgr;
-	LiveFeedManager* liveFeedManager;
-	VideoFeedManager* videoFeedManager;
 	IFeedManager* feedManager;
 	MotionDetector* motionDetector;
 	ImageTracker* imageTracker;
