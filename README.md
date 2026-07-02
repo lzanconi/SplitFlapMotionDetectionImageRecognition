@@ -7,8 +7,8 @@ The **SplitFlap Monitoring Software** is responsable for:
 The software consists of multiple components:\
 -**LiveFeedManager**: manages a live feed capture from a camera device (webcam)\
 -**VideoFeedManager**: manages a video stream feed from a pre-recorded video (.mp4 file)\
--**MotionDetector**: detects motion from the video feed (live or pre-recorded)\
--**ImageTracker**: tries to recognize the image shown while the split flap is still\
+-**MotionDetector**: detects motion from the video feed (live or pre-recorded) using MOG2 algorithm\
+-**ImageTracker**: tries to recognize the image shown while the split flap is still using ORB for features detection, Brute-Force Matcher (with KNN and Hamming distance) for matching and RANSAC for Homography estimation (checks if the image surface is planar)\
 -**ConfigManager**: loads data from a **conf.json** to configure the application\
 -**App**: the application class
 
@@ -26,26 +26,26 @@ The project has only two dependencies:\
 2. Put it wherever you want (e.g. C:\nlohmann\json.hpp)
 
 ### Visual Studio project update Include paths
-To update include paths, right click on the project name in the **Solution Explorer** and click on **Properties**\
-Go to **C/C++** -> **Additional Include Directories**, here you can update the include paths
+To update include paths, right click on the project name in the **Solution Explorer** and click on **Properties**.\
+Go to **C/C++** -> **Additional Include Directories**, here you can update the include paths.
 
 ### Visual Studio project update linker 
-To update linker paths, right click on the project name in the **Solution Explorer** and click on **Properties**\
-Go to **Linker** -> **General** -> **Additional Library Directories**, here you can update the libraries paths\
-Go to **Linker** -> **Input** -> **Additional Depedencies**, here you can paste the libraries file names
+To update linker paths, right click on the project name in the **Solution Explorer** and click on **Properties**.\
+Go to **Linker** -> **General** -> **Additional Library Directories**, here you can update the libraries paths.\
+Go to **Linker** -> **Input** -> **Additional Depedencies**, here you can paste the libraries file names.
 
 ### Console Logs
-The application outputs its logs in two colors:\
+The application outputs its logs in two colors:
 - **Green output** is for monitoring logs such as the **motion state** (if it's rotaing or not) or if it has recognized an image
-- **Cyan output** is for  app logs such as errors during the application runtime
+- **Cyan output** is for app logs such as errors during the application runtime
 
 ### Log files
-The application save its logs into two files:
-- **App.log** contains only logs related to the application (errors, infos etc.)
+The application save its logs in two files:
+- **App.log** contains only logs related to the application (errors, messages etc.)
 - **Monitor.log** contains only logs related to the split flap monitoring so it easier to just audit if the split flap is rotating and if the image has been recognized everytime the split flap stops rotating
 
 ### Config values
-**"isLiveFeed": false** -> the feed mode of the application, if it receives a live feed from a webcam or a pre-recorded feed from a video file
+**"isLiveFeed": false** -> the feed mode of the application, if it's a live feed from a webcam or a pre-recorded feed from a video file
 
 **"liveFeedWidth": 1280** -> the desired width of the live feed from a webcam (not an absolute value, it’s the webcam that decides which width it can return)
 
@@ -82,4 +82,4 @@ For example, in this application (which targets 60 FPS), the default value of 12
 		"Whale.jpg"
 	]
 }**: -> an array of images, each one representing the final picture each split flap shows when it's still.\
-The software use this images to compare them with its video feed and tries to recognize them.
+The software compares these images with its video feed frame and tries to recognize them.
