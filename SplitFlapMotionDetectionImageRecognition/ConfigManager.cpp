@@ -18,6 +18,8 @@ void ConfigManager::LoadConfig(const fs::path& configPath)
 		std::fstream fstream(configPath);
 		json j = json::parse(fstream);
 
+		if (j.contains("isLiveFeed"))
+			config.isLiveFeed = j["isLiveFeed"].get<bool>();
 		if (j.contains("liveFeedWidth"))
 			config.liveFeedWidth = j["liveFeedWidth"].get<int>();
 		if (j.contains("liveFeedHeight"))

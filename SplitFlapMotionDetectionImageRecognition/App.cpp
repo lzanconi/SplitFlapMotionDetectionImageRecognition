@@ -46,6 +46,27 @@ App::~App()
 	}
 }
 
+bool App::Initialize()
+{
+	Config config = GetConfig();
+	if (config.isLiveFeed)
+	{
+		if (!InitLiveFeed())
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!InitVideoFeed())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool App::InitLiveFeed()
 {
 	Config config = GetConfig();

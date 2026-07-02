@@ -14,10 +14,10 @@ int main()
 	Logger::Clear();
 
 	//INIT VIDEO FEED
-	if (!app.InitVideoFeed())
+	/*if (!app.InitVideoFeed())
 	{
 		return -1;
-	}
+	}*/
 
 	//INIT LIVE FEED
 	/*if (!app.InitLiveFeed())
@@ -25,6 +25,7 @@ int main()
 		return -1;
 	}*/
 
+	app.Initialize();
 	app.Run();
 
 	return 0;

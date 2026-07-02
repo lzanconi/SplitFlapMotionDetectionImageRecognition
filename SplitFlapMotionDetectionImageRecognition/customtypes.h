@@ -31,6 +31,7 @@ struct ROI
 
 struct Config
 {
+	bool isLiveFeed = false;
 	int liveFeedWidth = 1280;
 	int liveFeedHeight = 720;
 	std::string videoFeedFile = "split_flap2.mp4";

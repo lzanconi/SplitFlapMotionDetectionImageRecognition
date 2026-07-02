@@ -47,6 +47,7 @@ public:
 	App();
 	~App();
 
+	bool Initialize();
 	bool InitLiveFeed();
 	bool InitVideoFeed();
 

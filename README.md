@@ -45,6 +45,8 @@ The application save its logs into two files:
 - **Monitor.log** contains only logs related to the split flap monitoring so it easier to just audit if the split flap is rotating and if the image has been recognized everytime the split flap stops rotating
 
 ### Config values
+**"isLiveFeed": false** -> the feed mode of the application, if it receives a live feed from a webcam or a pre-recorded feed from a video file
+
 **"liveFeedWidth": 1280** -> the desired width of the live feed from a webcam (not an absolute value, it’s the webcam that decides which width it can return)
 
 **"liveFeedHeight": 720** -> the desired height of the live feed from a webcam
