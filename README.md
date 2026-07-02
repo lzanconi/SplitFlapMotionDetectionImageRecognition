@@ -36,13 +36,13 @@ Go to **Linker** -> **Input** -> **Additional Depedencies**, here you can paste 
 
 ### Console Logs
 The application outputs its logs in two colors:\
-**Green output** is for monitoring logs such as the **motion state** (if it's rotaing or not) or if it has recognized an image\
-**Cyan output** is for  app logs such as errors during the application runtime
+- **Green output** is for monitoring logs such as the **motion state** (if it's rotaing or not) or if it has recognized an image
+- **Cyan output** is for  app logs such as errors during the application runtime
 
 ### Log files
-The application save its logs into two files:\
-**App.log** contains only logs related to the application (errors, infos etc.)\
-**Monitor.log** contains only logs related to the split flap monitoring so it easier to just audit if the split flap is rotating and if the image has been recognized everytime the split flap stops rotating
+The application save its logs into two files:
+- **App.log** contains only logs related to the application (errors, infos etc.)
+- **Monitor.log** contains only logs related to the split flap monitoring so it easier to just audit if the split flap is rotating and if the image has been recognized everytime the split flap stops rotating
 
 ### Config values
 **"liveFeedWidth": 1280** -> the desired width of the live feed from a webcam (not an absolute value, it’s the webcam that decides which width it can return)
